@@ -1,3 +1,4 @@
+//Distance Sensor
 #define echoPin 2 // attach pin D2 Arduino to pin Echo of HC-SR04
 #define trigPin 3 //attach pin D3 Arduino to pin Trig of HC-SR04
 
@@ -11,13 +12,13 @@
 long duration; // variable for the duration of sound wave travel
 int distance; // variable for the distance measurement
 
-// my code
+// Sensor Vars.
 int sw=0, psw=0,count=1, sum=0;
-int td = 10; // the distancs between the sensor rnd the turbain
+int td = 5; // the distancs between the sensor rnd the turbain
 unsigned int curT = 0,preT =0;
-int f;
+double f;
 int dt;
-float avg=0,RoundPerSec;
+double avg=0,RoundPerSec;
 int delaytime = 100;
 int temp = 0;
 
@@ -30,8 +31,8 @@ void setup() {
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
   pinMode(echoPin, INPUT); // Sets the echoPin as an INPUT
   Serial.begin(9600); // // Serial Communication is starting with 9600 of baudrate speed
-  Serial.println("Ultrasonic Sensor HC-SR04 Test"); // print some text in Serial Monitor
-  Serial.println("with Arduino UNO R3");
+//  Serial.println("Ultrasonic Sensor HC-SR04 Test"); // print some text in Serial Monitor
+//  Serial.println("with Arduino UNO R3");
 
   //button setup
   pinMode(ledPin, OUTPUT);
@@ -40,53 +41,44 @@ void setup() {
 }
 
 void write(int d){
-
   digitalWrite(D,d);
 }
 
 void onestep(){
-
   write(0);
-  delay(5);
+  //delay(100);
   write(1);
 }
 
 void buttonFunc() {
-  // read the state of the pushbutton value:
-  
+  // read the state of the pushbutton value:  
   buttonState = digitalRead(buttonPin);
 
   // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-  
   if (buttonState == HIGH) {
     buttonflag_1= 1 ;
   }
-    if(buttonflag_1!=buttonflag_2 && buttonflag_1 == 1 )
-        countB++;
-    buttonflag_2 = buttonflag_1;    
-    buttonflag_1=0;
+  if(buttonflag_1 != buttonflag_2 && buttonflag_1 == 1 )
+    countB++;
+  buttonflag_2 = buttonflag_1;    
+  buttonflag_1=0;
 
-
-
-    if (countB%2==0){
-      digitalWrite(ledPin, HIGH);// turn LED on:
-      int i;
-      i=0;
-      while(i<NUMBER_OF_STEPS_PER_REV){
+  if (countB%2==0){
+    digitalWrite(ledPin, HIGH);// turn LED on:
+    int i;
+    i=0;
+    while(i<NUMBER_OF_STEPS_PER_REV){
       onestep();
       i++;
-      }
     }
-    else {
-         digitalWrite(ledPin, LOW); //turn LED off:
-        }
-        
-           Serial.println(countB);  
- }
+  }
+  else {
+    digitalWrite(ledPin, LOW); //turn LED off:
+  }
+  //Serial.println(countB);  
+}
  
-void loop() {
-
-  buttonFunc();
+void SensorFunc(){
   // Clears the trigPin condition
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
@@ -99,36 +91,39 @@ void loop() {
   // Calculating the distance
   distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
 
+
   // toggle sw
-  if(distance <= td){
+  if(distance <= td)
       sw = 1;
-      Serial.print("count ");
-      Serial.println(count);
-      count++ ;
-}
   else
-      sw =0;
+      sw = 0;
+
+  // updates count exactly once per change form 0 to 1
+  if(sw!=psw && sw == 1)
+    count++;
+
+  psw=sw;
+
   
   // updating curT for 1 cycle
-  if(count%4==0)
-     temp = 1;
-   
-  if (temp == 1){
-    temp =0;
-    curT = millis(); 
-    if(curT-preT>0)
-      dt=curT-preT;
-    Serial.print("curT: ");
-    Serial.println(curT);
-    Serial.print(" preT: ");
-    Serial.println(preT);
-    Serial.print("dt ");
-    Serial.println(dt);
-    preT = curT;
-    temp =0;
+  if(count>=4){
+    curT = millis();
+    count=0;
   }
 
-  f=1/dt; // freq
+  if(curT-preT>0){
+    dt=curT-preT;
+    preT=curT;
+   }
+   
+//  Serial.print("curT: ");
+//  Serial.print(curT);
+//  Serial.print(" preT: ");
+//  Serial.println(preT);
+
+  f=1000/(double)dt; // freq
+  Serial.print("f: ");
+  Serial.println(f);
   RoundPerSec = 1000*f ;
 
  // calculate the freq average
@@ -159,4 +154,11 @@ void loop() {
   //Serial.print("Distance: ");
   //Serial.print(distance);
   //Serial.println(" cm");
+}
+
+void loop() {
+
+  buttonFunc();
+  SensorFunc();
+
 }
