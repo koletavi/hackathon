@@ -13,7 +13,41 @@ from PIL import Image, ImageTk
 import openpyxl
 from datetime import datetime
 import pandas as pd
+from ipaddress import IPv4Address  # for your IP address
+from pyairmore.request import AirmoreSession  # to create an AirmoreSession
+from pyairmore.services.messaging import MessagingService  # to send messages
+import tkinter
 
+
+def excel_cit():
+    excel_data  = pd.read_excel (r'C:\Users\amrus\Desktop\project\אקתון\תושבים.xlsx')
+    fname = excel_data["first"].tolist()
+    lname = excel_data["last"].tolist()
+    phone = excel_data["phone"].tolist()
+    street = excel_data["רחוב"].tolist()
+
+    return fname,lname,phone,street
+
+def sms():
+    # try:
+    ip = IPv4Address("10.176.95.59")  # let's create an IP address object
+    # now create a session
+    session = AirmoreSession(ip)
+    # if your port is not 2333
+    # session = AirmoreSession(ip, 2334)  # assuming it is 2334
+    session.is_server_running  # True if Airmore is running
+    was_accepted = session.request_authorization()
+    service = MessagingService(session)
+    fname, lname, phone, street = excel_cit()
+    for i in range(0,len(fname)):
+        fullname = fname[i] +" "+lname[i]
+        p= phone[i]
+        p= str(p)
+        p = p.replace(".0","")
+        p = '0'+p
+        service.send_message(p,fullname+" היקר,\nקיימת התראה להצפה ברחוב "+street[i]+" אין לרדת לקומת מרתף ולעשות שימוש במעלית!!")
+    # except:
+    #     pass
 
 def excel_read():
     excel_data  = pd.read_excel (r'C:\Users\amrus\Desktop\project\אקתון\sensorData.xlsx')
@@ -48,16 +82,20 @@ def ux(readData = "123456789"):
         table = ttk.Treeview(table)
         table['columns'] = ('EventStartTime', 'SensorNumber', 'StreetsAtRisk', 'SesnorData')
         table.column("#0", width=0,  stretch=NO)
-        table.column("EventStartTime",anchor=CENTER, width=120)
-        table.column("SensorNumber",anchor=CENTER,width=120)
-        table.column("StreetsAtRisk",anchor=CENTER,width=120)
-        table.column("SesnorData",anchor=CENTER,width=120)
+        table.column("EventStartTime",anchor=CENTER, width=160)
+        table.column("SensorNumber",anchor=CENTER,width=160)
+        table.column("StreetsAtRisk",anchor=CENTER,width=160)
+        table.column("SesnorData",anchor=CENTER,width=160)
 
         table.heading("#0",text="",anchor=CENTER)
         table.heading("EventStartTime",text="Event Start Time",anchor=CENTER)
         table.heading("SensorNumber",text="Sensor Number",anchor=CENTER)
         table.heading("StreetsAtRisk",text="Streets At Risk",anchor=CENTER)
         table.heading("SesnorData",text="Sesnor Data",anchor=CENTER)
+
+        button_submit = tkinter.Button(window, text="התרעה לאזרחים", command=sms,bg = "white")
+        button_submit.config(width=20, height=2)
+        button_submit.pack()
 
         def Refresher(temp =0):
             time,sensor,monitor= excel_read()
@@ -66,7 +104,7 @@ def ux(readData = "123456789"):
                 # if temp != 1:
                 #     temp =1
                 table.insert(parent='',index='end',iid=i-1,text='',
-                values=(time[i],sensor[i],"נקר יוסף, ירושלים",monitor[i]))
+                values=(time[i],sensor[i],"ביאליק, דרך נגבה",monitor[i]))
 
             window.after(20000, Refresher)  # every second...
         table.pack()
